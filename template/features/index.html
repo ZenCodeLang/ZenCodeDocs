@@ -1,0 +1,106 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<!-- Required meta tags -->
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<!--<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">-->
+		<link rel="stylesheet" href="../css/bootstrap.min.css" />
+		<title>ZenCode Features</title>
+	</head>
+	<body>
+		<div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
+			<h5 class="my-0 mr-md-auto font-weight-normal">ZenCode Docs</h5>
+			<nav class="my-2 my-md-0 mr-md-3">
+				<a class="p-2 text-dark" href="../">Home</a>
+				<a class="p-2 text-dark" href="../features">Features</a>
+				<a class="p-2 text-dark" href="../language">Language</a>
+				<a class="p-2 text-dark" href="../stdlibs">Standard Libraries</a>
+				<a class="p-2 text-dark" href="../examples">Examples</a>
+			</nav>
+			<a class="btn btn-outline-primary" href="../download">Download</a>
+		</div>
+		<main role="main">
+			<section class="jumbotron text-center">
+				<div class="container">
+					<h1 class="jumbotron-heading">ZenCode Features</h1>
+					<p class="lead text-muted">Explore the features that ZenCode has to offer. What's deterministic destruction and why is it valuable? How does const correctness work? How does transpilation work?</p>
+				</div>
+			</section>
+			<div class="album py-5 bg-light">
+				<div class="container">
+					<div class="row">
+						<div class="col-md-4">
+							<div class="card mb-4 shadow-sm">
+								<div class="card-header">
+									<h4 class="my-0 font-weight-normal">Transpileable</h4>
+								</div>
+								<div class="card-body">
+									<p>ZenCode is designed to be transpiled to whichever system you are working with. Working on iOS? Translate to Swift. Working on Android? Translate to Java. Web? Javascript!</p>
+									<a class="btn btn-block btn-primary" href="transpilation.html">Read more</a>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-4">
+							<div class="card mb-4 shadow-sm">
+								<div class="card-header">
+									<h4 class="my-0 font-weight-normal">Modular</h4>
+								</div>
+								<div class="card-body">
+									<p>Break down complex systems in smaller modules. ZenCode applications and libraries are meant to be modular and its tools are designed for it. Use API modules to implement functionality in different platforms.</p>
+									<a class="btn btn-block btn-primary" href="transpilation.html">Read more</a>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-4">
+							<div class="card mb-4 shadow-sm">
+								<div class="card-header">
+									<h4 class="my-0 font-weight-normal">Access enforcement</h4>
+								</div>
+								<div class="card-body">
+									<p>Library, class and method access is strictly enforced in all cases and cannot be circumvented from within ZenCode. Let language features do the heavy lifting of your system security.</p>
+									<a class="btn btn-block btn-primary" href="access.html">Read more</a>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-4">
+							<div class="card mb-4 shadow-sm">
+								<div class="card-header">
+									<h4 class="my-0 font-weight-normal">Const correctness</h4>
+								</div>
+								<div class="card-body">
+									<p>Use constness and immutability to make the system work exactly the way you intend to. Use constness to make sure code doesn't modify data that shouldn't be modified, without having to defensively copy everything.</p>
+									<a class="btn btn-block btn-primary" href="constness.html">Read more</a>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-4">
+							<div class="card mb-4 shadow-sm">
+								<div class="card-header">
+									<h4 class="my-0 font-weight-normal">Memory management</h4>
+								</div>
+								<div class="card-body">
+									<p>Be strict about ownership and sharing. Write code both your and your compiler can reason about. Make libraries that work both with and without garbage collector, with minimal memory allocation overhead.</p>
+									<a class="btn btn-block btn-primary" href="memory.html">Read more</a>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-4">
+							<div class="card mb-4 shadow-sm">
+								<div class="card-header">
+									<h4 class="my-0 font-weight-normal">Deterministic destruction</h4>
+								</div>
+								<div class="card-body">
+									<p>Make sure resources are closed when no longer used. Don't just leave it up to the programmer to close something - make sure it happens automatically, exactly in the way it should.</p>
+									<a class="btn btn-block btn-primary" href="destruction.html">Read more</a>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+	</body>
+</html>
