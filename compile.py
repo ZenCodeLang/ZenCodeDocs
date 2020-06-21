@@ -1,6 +1,6 @@
 # Requires commonmark (pip install CommonMark)
 
-from os import listdir
+from os import listdir, mkdir
 from os.path import isfile, isdir, join
 import commonmark
 import shutil
@@ -54,6 +54,9 @@ def compileFile(inputFilename, outputFilename, up):
 
 
 def compileDir(inputDir, outputDir, up):
+    if not isdir(outputDir):
+        mkdir(outputDir)
+    
     for f in listdir(inputDir):
         input = join(inputDir, f)
         output = join(outputDir, f)
