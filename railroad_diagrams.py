@@ -164,15 +164,13 @@ class Style(DiagramItem):
         self.needsSpace = False
 
     def __repr__(self):
-        return 'Style(%r)' % css
+        return 'Style(%r)' % self.css
 
     def format(self, x, y, width):
         return self
 
     def writeSvg(self, write):
-        # Write included stylesheet as CDATA. See https://developer.mozilla.org/en-US/docs/Web/SVG/Element/style
-        cdata = u'/* <![CDATA[ */\n{css}\n/* ]]> */\n'.format(css=self.css)
-        write(u'<style>{cdata}</style>'.format(cdata=cdata))
+        write(u'<style>{css}</style>'.format(css=self.css))
 
 
 class Diagram(DiagramItem):
@@ -247,27 +245,6 @@ class Diagram(DiagramItem):
         if not self.formatted:
             self.format()
         return DiagramItem.writeSvg(self, write)
-
-    def parseCSSGrammar(self, text):
-        token_patterns = {
-            'keyword': r"[\w-]+\(?",
-            'type': r"<[\w-]+(\(\))?>",
-            'char': r"[/,()]",
-            'literal': r"'(.)'",
-            'openbracket': r"\[",
-            'closebracket': r"\]",
-            'closebracketbang': r"\]!",
-            'bar': r"\|",
-            'doublebar': r"\|\|",
-            'doubleand': r"&&",
-            'multstar': r"\*",
-            'multplus': r"\+",
-            'multhash': r"#",
-            'multnum1': r"{\s*(\d+)\s*}",
-            'multnum2': r"{\s*(\d+)\s*,\s*(\d*)\s*}",
-            'multhashnum1': r"#{\s*(\d+)\s*}",
-            'multhashnum2': r"{\s*(\d+)\s*,\s*(\d*)\s*}"
-        }
 
 
 class Sequence(DiagramItem):
@@ -907,6 +884,146 @@ class Skip(DiagramItem):
 
     def __repr__(self):
         return 'Skip()'
+
+
+class ParsingString:
+    def __init__(self, value):
+        self.value = value
+        self.offset = 0
+        self.skipWhitespace()
+
+    def isNext(self, str):
+        return self.value[self.offset:self.offset + len(str)] == str
+
+    def tryConsume(self, str):
+        if self.value[self.offset:self.offset + len(str)] == str:
+            self.offset += len(str)
+            self.skipWhitespace()
+            return True
+        else:
+            return False
+
+    def consume(self, token):
+        if not self.tryConsume(token):
+            raise ValueError('Expected ' + token + '\n' + self.value + '\n' + (' ' * self.offset) + '^')
+
+    def token(self):
+        char = self.value[self.offset]
+        if char == "'":
+            offset = self.offset + 1
+            while self.value[offset] != "'":
+                if self.value[offset] == '\\':
+                    offset += 1
+                offset += 1
+            offset += 1
+            result = self.value[self.offset:offset]
+            self.offset = offset
+            self.skipWhitespace()
+            return result
+        elif '0' <= char <= '9':
+            offset = self.offset + 1
+            while '0' <= self.value[offset] <= '9':
+                offset += 1
+            result = self.value[self.offset:offset]
+            self.offset = offset
+            self.skipWhitespace()
+            return int(result)
+        elif 'a' <= char <= 'z' or 'A' <= char <= 'Z':
+            offset = self.offset + 1
+            while 'a' <= self.value[offset] <= 'z' or 'A' <= self.value[offset] <= 'V':
+                offset += 1
+            result = self.value[self.offset:offset]
+            self.offset = offset
+            self.skipWhitespace()
+            return result
+        else:
+            raise ValueError('Invalid token: ' + char)
+
+    def skipWhitespace(self):
+        while self.offset < len(self.value) and self.value[self.offset] in [' ', '\t', '\n', '\r']:
+            self.offset += 1
+
+
+def parseDiagram(definition):
+    return Diagram(parse(ParsingString(definition)))
+
+
+def parse(parser):
+    element = parser.token()
+    if element is int:
+        raise ValueError('Didn\'t expect an int here')
+    elif element[0] == '\'':
+        return Terminal(element[1:-1])
+    elif element == 'NonTerminal':
+        parser.consume('(')
+        value = parser.token()[1:-1]
+        parser.consume(')')
+        return NonTerminal(value)
+    elif element == 'Sequence':
+        return Sequence(*parseItems(parser))
+    elif element == 'Stack':
+        return Stack(*parseItems(parser))
+    elif element == 'OptionalSequence':
+        return OptionalSequence(*parseItems(parser))
+    elif element == 'Optional':
+        return Optional(*parseItems(parser))
+    elif element == 'Choice':
+        parser.consume('(')
+        default = parser.token()
+        if not isinstance(default, int):
+            raise ValueError('default must be an int (is %s)' % default)
+        items = []
+        while parser.tryConsume(','):
+            items.append(parse(parser))
+        parser.consume(')')
+        return Choice(default, *items)
+    elif element == 'MultipleChoice':
+        parser.consume('(')
+        default = parser.token()
+        if not default is int:
+            raise ValueError('default must be an int')
+        parser.consume(',')
+        type = parser.token()
+        if not type in ['all', 'any']:
+            raise ValueError('type must be either all or any')
+
+        items = []
+        while parser.tryConsume(','):
+            items.append(parse(parser))
+        parser.consume(')')
+        return MultipleChoice(default, type, *items)
+    elif element == 'OneOrMore':
+        parser.consume('(')
+        item = parse(parser)
+        parser.consume(')')
+        return OneOrMore(item)
+    elif element == 'ZeroOrMore':
+        parser.consume('(')
+        item = parse(parser)
+        parser.consume(')')
+        return ZeroOrMore(item)
+    elif element == 'Start':
+        return Start()
+    elif element == 'End':
+        return End()
+    elif element == 'Comment':
+        parser.consume('(')
+        text = parser.token()
+        parser.consume(')')
+        return Comment(text)
+    elif element == 'Skip':
+        return Skip()
+
+
+def parseItems(parser):
+    parser.consume('(')
+    items = []
+    while not parser.tryConsume(')'):
+        items.append(parse(parser))
+        if not parser.tryConsume(','):
+            parser.consume(')')
+            break
+    return items
 
 
 if __name__ == '__main__':

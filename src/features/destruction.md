@@ -2,7 +2,7 @@
 
 In the age of garbage collection, destruction has gone mostly ignored. For many cases, it isn't important either: objects are cleaned up by the garbage collector.
 
-However, not everything can be managed by a garbage collector. File handles, for instance, need to be closed when they are no longer needed - not when the garbage collector decides to kick in. This has been mostly "solved" by closeables (or disposables, depending on the language you're used to). Yes these closeables have their own disadvantage: they need to be closed. And this isn't always trivial.
+However, not everything can be managed by a garbage collector. File handles, for instance, need to be closed when they are no longer needed - not when the garbage collector decides to kick in. For this reason, garbage-collected languages and runtimes generally provide a closeable or disposable interface. These are either closed manually (error-prone) or closed with a language feature such a try-with-resources. Although this generally works, it is not very practical.
 
 Surely, for cases where a resource (such as an open file) is used only within the context of a specific block statement, closing the resource is trivial - put it in a try-with-resources or using statement (or whatever else your language of choice may be using) and the resource will be closed whenever you're done. However, if such objects are passed to other methods or stored into a field, the case is far less trivial. That's where proper language support really benefits.
 
@@ -12,17 +12,17 @@ In ZenCode, a destructable type is any kind of type that defines a destructor, a
 
 ```
 class MyClass {
-	this() {
-		/* initialize some resource */
-	}
+    this() {
+	       /* initialize some resource */
+    }
 	
-	~this {
-		/* cleanup some resource */
-	}
+    ~this {
+        /* cleanup some resource */
+    }
 }
 ```
 
-Note that classes, structs and interfaces can all be destructible.
+Note that classes and interfaces can both be destructible, whereas structs cannot.
 
 Values are destructed when they go out of scope. For instance, consider the following code:
 
@@ -73,11 +73,11 @@ Destructing b
 
 Object fields can be of a destructible type. If a class contains any fields of destructible types, the class itself will automatically become destructible too. This may eventually cascade further to parent types. Additionally, type expansions cannot define destructible fields. When a class with destructible fields is destructed, the destructible fields will automatically be cleaned up as well.
 
-~~~ MORE ~~~
+The same will happen when a field is set or a local variable is updated - which will also automatically destruct the object. 
 
 ## Casting
 
-A destructible value can only be cast to a target type is also destructible, unless a guarantee can be given that the value is not destructed while in use. Additionally, if a type is destructible, its supertype must also be destructible, and vice versa. This ensures that destruction is always guaranteed, even if a value has been casted to a supertype or interface value.
+A destructible value can only be cast to a target type which is also destructible, unless a guarantee can be given that the value is not destructed while in use. Additionally, if a type is destructible, its supertype must also be destructible, and vice versa. This ensures that destruction is always guaranteed, even if a value has been casted to a supertype or interface value.
 
 For instance, consider the following code:
 
@@ -120,4 +120,4 @@ testB1(new MyClass()); // compile-time error: cannot cast destructible to nondes
 testB2(new MyClass()); // OK, borrowing the value, will be destructed *after* the method returns
 ```
 
-Note that we could also replace `unique with `shared here (or omit entirely and let it default to `shared) and it would work precisely the same for this example.
+Note that we could also replace `unique` with `auto` here (or omit entirely and let it default to `auto`) and it would work precisely the same for this example.
