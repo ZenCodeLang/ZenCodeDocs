@@ -37,7 +37,9 @@ The following whitespace token types exist:
 - Multi-line comment: ```/\\*([^\\*]|(\\*+([^\\*/])))*\\*+/```
 - Whitespace: ```( |\t|\r|\n)```
 
-Preprocessor instructions are treated as whitespace, but target environments may choose to process them. It is up to the target environment to choose how these are processed, the ZenCode language itself does not assign any meaning to these comments. Preprocessor comments starting with a double hash (## something) and an exclamation mark (#! something) are reserved for future ZenCode processing. Additionally, if a file starts with a comment #! it will be guaranteed to be ignored in any future versions of ZenCode (thus can be safely used to indicate the program to execute the script).
+Preprocessor instructions are treated as whitespace by the ZenCode compiler, but target environments may choose to process them. It is up to the target environment to choose how these are processed, the ZenCode language itself does not assign any meaning to these comments. Preprocessor comments starting with a double hash (## something) and an exclamation mark (#! something) are reserved for future ZenCode processing. Additionally, if a file starts with a comment #! it will be guaranteed to be ignored in any future versions of ZenCode (thus can be safely used to indicate the program to execute the script).
+
+Preprocessor instructions, although treated as whitespace by the ZenCode compiler, should also only be used for preprocessors and not for comments. Using # for comments may result in undefined behavior.
 
 Whitespace is generally ignored, though it can have a meaning inside bracket expressions and custom parsers.
 
@@ -95,30 +97,24 @@ Named characters such as ```\&copy;``` or ```\&reg;``` are supported and make it
 
 Strings and identifiers may be prefered by the @ character. An identifier prefixed by @ is indentical by the identifier without the prefix, with the only difference that they are not processed as keywords. Thus a variable that should be named "final" can then be named "@final" to prevent it from being interpreted as the final keyword. (this is also the recommended way to use variables which would be named as keywords, so don't precede or suffix them with underscores or anything like it...
 
-Identifiers starting with $ are treated especially, and $ itself is a special identifier as well. $ identifiers are called "local identifiers" and have a meaning depending on their context. In a class, $ identifiers always refer to a field. This makes it possible to assign to a field instead of a setter, or as a short form to set fields:
+The "$" identifier is special and has two possible meanings:
+
+- When indexing an array, $ is set to the length of the array. This makes it easy to access the last (or nth last) element in an array: `myArray[$ - 1]`
+- In a setter, $ specifies the value that is currently being set:
 
 ```
 class MyClass {
-	test: int { public get };
+	var _test: int;
 	
-	this(test: int) {
-		$test = test; // doesn't invoke the setter
-	}
-	
-	set test: int {
-		if $ >= 0
-			$test = $;
+	public set test {
+		_test = $;
 	}
 }
 ```
 
-The "$" identifier itself has two possible meanings:
+In case both may be applicable, the innermost definition will be used.
 
-- In a setter, $ specifies the value that is currently being set. (as used in the example above)
-- When indexing an array, $ is set to the length of the array. This makes it easy to access the last (or nth last) element in an array: `myArray[$ - 1]`
-
-Note that both may be nested, in which case the inner definition dominates.
-
+Identifiers starting with $ are reserved for future use.
 
 A string literal prefixed by the @ character is interpreted as wysiwyg string. In such string, escape characters are not processed, but the ' or " character cannot occur. Also, these strings may span multiple lines.
 
@@ -146,6 +142,7 @@ class
 const
 continue
 default
+destructable
 do
 double
 else
@@ -173,6 +170,8 @@ is
 lock
 long
 match
+multithreaded
+mut
 new
 null
 override
@@ -183,6 +182,7 @@ public
 return
 sbyte
 set
+shared
 short
 static
 string
@@ -190,12 +190,14 @@ struct
 super
 switch
 this
+threadlocked
 throw
 throws
 true
 try
 uint
 ulong
+unique
 ushort
 usize
 val
@@ -203,6 +205,7 @@ var
 variant
 virtual
 void
+weak
 while
 ```
 
@@ -249,7 +252,6 @@ Sequence(
         NonTerminal('ClassDeclaration'),
         NonTerminal('InterfaceDeclaration'),
         NonTerminal('EnumDeclaration'),
-        NonTerminal('StructDeclaration'),
         NonTerminal('AliasDeclaration'),
         NonTerminal('FunctionDeclaration'),
         NonTerminal('ExpansionDeclaration'),
@@ -305,37 +307,6 @@ Sequence(
 	Optional(Sequence(NonTerminal('EnumValue'), ZeroOrMore(Sequence(',', NonTerminal('EnumValue'))), Optional(','))),
 	Optional(Sequence(';', ZeroOrMore(NonTerminal('DeclarationMember')))),
 	'}'
-)
-```
-
-### Struct declaration
-
-Structs define value types. They are similar to classes, except they have value semantics instead of object semantics.
-That is, in the following example, the function will not modify the value that was passed in:
-
-```
-struct Point {
-	var x: number;
-	var y: number;
-}
-function doSomething(p: Point) {
-	p.x = 20;
-}
-
-val a as Point = { 10, 10 };
-doSomething(a);
-print(a.x); // will print 10
-```
-
-```Railroad
-Sequence(
-    'struct',
-    NonTerminal('Identifier'),
-    Optional(NonTerminal('GenericParameters')),
-    Optional(Sequence(':', NonTerminal('Type'))),
-    '{',
-    ZeroOrMore(NonTerminal('DeclarationMember')),
-    '}'
 )
 ```
 
@@ -408,7 +379,7 @@ Sequence(
 )
 ```
 
-## Declaring class, interface, struct and enum members
+## Declaring class, interface and enum members
 
 Classes, interfaces, structs and enums can define declaration members, which can be one of the following:
 
@@ -532,8 +503,6 @@ Sequence(
 )
 ```
 
-
-
 ### Method definitions
 
 ### Getter definitions
@@ -553,3 +522,442 @@ Sequence(
 ### Iterator definitions
 
 ### Inner types
+
+## Statements
+
+
+
+```Railroad
+Sequence(
+	ZeroOrMore(NonTerminal('Annotation')),
+	Choice(0,
+		Sequence(NonTerminal('Expression'), ';'),
+		NonTerminal('BlockStatement'),
+		NonTerminal('ReturnStatement'),
+		NonTerminal('VarStatement'),
+		NonTerminal('IfStatement'),
+		NonTerminal('ForStatement'),
+		NonTerminal('DoWhileStatement'),
+		NonTerminal('WhileStatement'),
+		NonTerminal('ThrowStatement'),
+		NonTerminal('TryStatement'),
+		NonTerminal('ContinueStatement'),
+		NonTerminal('BreakStatement'),
+		NonTerminal('SwitchStatement')
+	)
+)
+```
+
+### Block statements
+
+At any point where a statement is expected, a block statement can be used to group multiple statements:
+
+```Railroad
+Sequence('{', ZeroOrMore(NonTerminal('Statement')), '}')
+```
+
+### Return statements
+
+Return expressions terminate execute of the current function or method and may optionally return a value:
+
+```Railroad
+Sequence('return', Optional(NonTerminal('Expression')), ';')
+```
+
+If a method is specified to return a value (that is, its return type is not `void`), then a return value **must** be specified. If the method does not return a value (its return type is `void`), it is not permitted to specify a return value.
+
+### Variable declarations
+
+Variable declarations declare a single value and may optionally assign a default value to it. A variable may either be final (`val`) meaning that it cannot be modified after being assigned, or it can be nonfinal (`var`) meaning that it may be modified after initial assignment.
+
+```Railroad
+Sequence(
+	Choice(1, 'var', 'val'),
+	NonTerminal('Identifier'),
+	Optional(Sequence(':', NonTerminal('Type'))),
+	Optional(Sequence('=', NonTerminal('Expression'))),
+	';'
+)
+```
+
+It is not required to initialize a `val` immediately, but there must be exactly one assignment:
+
+```
+val a: string;
+a = "hello"; // OK
+
+val b: string;
+if condition {
+	b = "x";
+} else {
+	b = "y";
+}
+println(b); // OK
+
+val c: string;
+if condition {
+	c = "x";
+}
+c = "y"; // error: final variable may already be assigned a value
+```
+
+Variables must always have their type defined unambiguously. If the type could not be inferred, an error is generated.
+
+```
+val a = "hello"; // ok, type is string
+val b = 0; // ok, type is int
+val c = null; // error, type not clear here
+var d = []; // error, what type of array are we declaring here?
+```
+
+If the variable type cannot be inferred, a type must be specified explicitly. If the variable is not immediately assigned a value, a type must be defined explicitly.
+
+It is recommended to use `val` as much as possible. Most variables are only assigned once, and using `val` in those case makes it clear that the intent if the assignment is that this is the one and only assignment of this variable, and it will be clear to whoever is reading the code - most of the time, you and yourself - not to look any further for modifications of this variable.
+
+On the other hand, a consistent use of `val` and `var` will also mean that if a variable is declared as a `var`, it is going to be modified somewhere - quite important when reading code.
+
+As an added benefit, it also prevents you from accidentally modifying a variable you didn't intend to.
+
+### For loops
+
+In ZenCode, all for loops are foreach loops, and use the following syntax:
+
+```Railroad
+Sequence(
+	'for',
+	NonTerminal('Identifier'),
+	ZeroOrMore(Sequence(',', NonTerminal('Identifier'))),
+	'in',
+	NonTerminal('Expression'),
+	NonTerminal('Statement')
+)
+```
+
+For loops may loop over values or over keys and values in a list or dictionary:
+
+```
+val items = ["a", "b", "c"];
+for item in items {
+	println(item);
+}
+for index, item in items {
+	println(index + ": " + item);
+}
+
+val dict = {a: "x", b: "y", c: "z"};
+for key, value in dict {
+	println(key + ": " + value);
+}
+```
+
+If you need to loop over a range of integers, it is possible to do so by looping over a range:
+
+```
+for i in 0..10 {
+	println(i); // prints 0,1,2,3,4,5,6,7,8,9
+}
+```
+
+If you need any other kind of loop, it will need to be written as a do/while or while loop instead.
+
+It is not possible to assign to loop variables, that is, they are equivalent to `val` declarations.
+
+### Do-while and while loops
+
+For more flexible looping structures, traditional while and do/while loops are available.
+
+```Railroad
+Sequence(
+	'while',
+	Optional(Sequence(':', NonTerminal('Identifier'))),
+	NonTerminal('Expression'),
+	NonTerminal('Statement')
+)
+```
+
+```Railroad
+Sequence(
+	'do',
+	Optional(Sequence(':', NonTerminal('Identifier'))),
+	NonTerminal('Statement'),
+	'while',
+	NonTerminal('Expression'),
+	';'
+)	
+```
+
+While loops will repeat for as long as the given condition is valid, and will immediately stop if the condition resolves to false:
+
+```
+var i = 0;
+while i < 10 {
+	println("Iteration: " + i);
+	i++;
+}
+```
+
+Do-while loops, instead, will always run at least once, and will repeat for as long as the given condition resolves to true:
+
+```
+var i = 0;
+do {
+	println("Iteration: " + i);
+} while i < 10;
+```
+
+When using nested loops, loops can be named as well, making it possible to break or continue on an outer loop:
+
+```
+while:outer conditionA {
+	while conditionB {
+		if something
+			continue outer;
+	}
+}
+
+do:outer {
+	while conditionB {
+		if something
+			break outer;
+	}
+} while conditionA
+```
+
+### Throw statements
+
+Throw statements can be used to raise an exception, which can later be caught with a try/catch statement:
+
+```Railroad
+Sequence('throw', NonTerminal('Identifier'), ';')
+```
+
+```
+throw new NeverGoingToHappenException();
+```
+
+### Switch statements
+
+Switch statements may branch to a number of options depending on an integer, string or enum value:
+
+```Railroad
+Sequence(
+	'switch',
+	NonTerminal('Identifier'),
+	'{',
+	ZeroOrMore(Choice(1,
+		Sequence('case', NonTerminal('Expression'), ':'),
+		Sequence('default', ':'),
+		NonTerminal('Statement')
+	)),
+	'}'
+)
+```
+
+```
+var option = 3;
+switch option % 2 {
+	case 0:
+		println("even number");
+		break;
+	case 1:
+		println("odd number");
+		break;
+}
+```
+
+It is illegal for a non-empty case to fall through to a next case, unless the last statement is `continue`:
+
+```
+var option = 4;
+switch option {
+	case 1: // OK, empty cases may fall through
+	case 2:
+	case 3:
+	case 5:
+	case 7:
+		println("Prime number");
+		// error, case must not fall through
+	case 10:
+		println("You entered ten");
+		continue; // OK, can fall through
+	case 4:
+	case 6:
+	case 8:
+	case 9:
+		println("Not a prime");
+		break;
+	default:
+		println("Number too large");
+		// break in the last case is not necessary
+}
+```
+
+### Break and continue statements
+
+Continue statements can be used to skip execution of a loop:
+
+```Railroad
+Sequence('continue', Optional(NonTerminal('Identifier')), ';')
+```
+
+Likewise, break statements can be used to break out of a loop altogether:
+
+```Railroad
+Sequence('break', Optional(NonTerminal('Identifier')), ';')
+```
+
+Break and continue statement will be default skip or break the innermost loop or switch statement. If an outer loop or switch of a nested loop must be targeted instead, an identifier can be given which may denote a different loop. In the case of while or do/while loops, a label can be given; and in the case of a for loop, the name of the looping variable can be used instead. If multiple loop variables are present, any of the loop variable names can be used to target the loop:
+
+```
+var total = 0;
+for a in [1, 2, 3] {
+	for b in [4, 5, 6] {
+		total += a * b;
+		if total > 10:
+			break a; // break out of the outer loop
+	}
+}
+```
+
+## Expressions
+
+### Assignment operators
+
+### Ternary operator
+
+### Combinatorial expressions (&& and ||)
+
+Combinatorial expressions can be used to either:
+
+- Evaluate the right-hand side of an expression if and only if the left-hand side resolves to true or non-null (&&)
+- Evaluate the right-hand side of an expression if and only if the left-hand side resolves to false or null (||)
+
+These expressions can be used to combine two conditions, to guard the right-hand side against a certain condition, or as a performance improvement preventing a possible costly expression to be resolved. It can also be used for null handling logic:
+
+```
+val x = 5;
+if x >= 0 && x < 10 // combine two conditions
+	println("x is within range");
+if x < 0 || x >= 10
+	println("x is out of range");
+
+function foo(dictionary: int[string]) {
+	val a = dictionary.get('something'); // type of a is int?
+	val b = dictionary.get('something') || 0; // use 0 as default value here
+	val c = a && a + 1; // guard against a being null; if a is null, this expression resolves to null
+}
+```
+
+### Logical and, or and xor
+
+### Comparison expressions
+
+### Contains (in)
+
+### Shift left and shift right
+
+### Addition, subtraction and concatenation
+
+### Multiplication, division and modulo
+
+### Unary operands: negation, inversion and bitwise inversion
+
+### Try expressions
+
+### Accessing members (fields and methods)
+
+### Null-safe operator ?.
+
+
+
+### Indexing
+
+### Calling
+
+### Casting
+
+### Increment and decrement
+
+### Lambda expressions
+
+### Range expressions
+
+### Integer constants
+
+### Floating-point constants
+
+### String constants
+
+### $
+
+### This and super
+
+### Arrays
+
+### Dictionaries
+
+### Brackets
+
+### Null, true, false
+
+### New expressions
+
+### Throw expressions
+
+### Panic expressions
+
+### Match expressions
+
+### Bracket expressions
+
+### Type inference in expressions
+
+In many cases, the type of an expression can be inferred from its context. This can be used to resolve ambiguity in many cases and provides some additional benefits as well:
+
+```
+function a(items: byte[]) {
+	... do something with items ...
+}
+
+val x = []; // error: could not infer array type
+a([]); // works fine - we know that it's a byte array now
+a([1, 2]); // also OK - the array will be a byte array now
+var y = [1, 2]; // assumed to be an int array
+a(y); // error, cannot cast an int array to an int array
+
+val x: byte[] = []; // type of the expression inferred from the variable type
+```
+
+Expression types can be inferred from many sources:
+
+- If the expression is used as function argument, and the type of the parameter is unambiguously known (that is, method overloading didn't result in multiple possible argument types), the type of the expression will be inferred from the argument type.
+- If the expression is assigned to a variable, and the type of the variable is already known (for instance, because the variable is explicitly type, or an assignment is being performed to an existing variable), the type of the expression will be inferred to be the variable type
+- If the expression is the content of a `switch` or `match` expression, the type of the variable is inferred to be the type of the `switch` or `match` variable.
+- If the expression is the left-hand side of an `as` expression, the type of the left-hand side will be inferred to be of the specified cast.
+- If the expression is the right-hand side of an `in` expression, the type of the right-hand side will be inferred to be an array of the same type as the left-hand side.
+- If the expression is the right-hand side of an equality expression, the type of the right-hand side will be inferred to be of the same type as the left-hand side.
+
+Also, if the type is inferred to be an enum type, it is possible to specify the name of the enum constant directly without qualifying it. Thus the following is possible:
+
+```
+enum Animal {
+	Cat,
+	Dog,
+	Tiger
+}
+
+val animal = Animal.Cat;
+if animal in [Cat, Dog] // equivalent to [Animal.Cat, Animal.Dog]
+	println("You can pet this");
+if animal === Tiger
+	println("Petting is not recommended");
+	
+println(match animal {
+	Cat => "meow",
+	Dog => "woof",
+	Tiger = "MEOW"
+})
+```
+
+## Generics
+

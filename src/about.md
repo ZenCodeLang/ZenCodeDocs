@@ -2,6 +2,14 @@
 
 ZenCode is a programming language intended to be used as scripting language within a larger host application. Thus if you have an application and are looking for a way to safely integrate plugins or user-provided scripts, ZenCode may be for you.
 
+## What is ZenCode?
+
+ZenCode is a programming language and software which can be used to provide an application with scripting and/or plugin capabilities. It is intended to run code with fine-tuned control over what it is allowed to do, such that even unknown or untrusted code can be run safely. At the same time, we want to keep it clean, modern, and easy to learn and understand, even by non-professionals.
+
+The name "ZenCode" denotes both the language as well as the runtime systems.
+
+
+
 What is it?
 
 - A safe system, fully controlled by its host environment. The host application has fine control over which functions the scripts may perform.
