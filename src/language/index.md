@@ -427,69 +427,20 @@ Sequence(
 	Choice(0, 'val', 'var'),
 	NonTerminal('Identifier'),
 	Optional(Sequence(':', NonTerminal('Type'))),
-	Optional(Sequence('{',
-		Optional(Sequence(
-			Optional(Choice(0, 'public', 'internal', 'protected', 'private')),
-			Choice(0, 'get', 'set'),
-			Optional(Sequence(
-				',',
-				Optional(Choice(0, 'public', 'internal', 'protected', 'private')),
-				Choice(0, 'get', 'set')
-			))
-		))
-	)),
 	Optional(Sequence('=', NonTerminal('Expression'))),
 	';'
 )
 ```
 
-All fields are private and can only be accessed by methods of the given class or struct.
+All fields are private by default, making them only accessible by methods of the given class or struct. Fields can only be modified if they are of the nonfinal (`var`) variant. Fields may optionally have an initializer - if the type of the field can be deduced from the initializer, the type of the field may be omitted.
 
-However, there is a shorthand syntax to automatically generate the getters and setters:
-
-```
-var myField: int { get, set };
-```
-
-These getters and setters are public by default, but can be mode protected or internal as well:
+Fields can be declared with a different access level as well:
 
 ```
-var myField: int { protected get }
+public var myField: int;
 ```
 
-Fields can only be modified if they are of the nonfinal (`var`) variant and the method that modifies them is marked `mut`. For any method not marked mut, the current object is essentially immutable.
-
-For instance, the following would be fine:
-
-```
-class MyClass {
-	var field: int = 0;
-	
-	mut increment() {
-		this.field++;
-	}
-}
-```
-
-But the following examples won't compile:
-
-```
-class MyFaultyClassA {
-	val field: int = 0;
-	
-	mut increment() {
-		this.field++; // error: field is final
-	}
-}
-
-class MyFaultyClassB {
-	var field: int = 0;
-	
-	increment() {
-		this.field++; // error: increment is not mut
-	}
-}
-```
+Although the field itself will remain private, a getter with the specified access level will be generated. If the field is mutable (`var`), a setter will be generated as well. If later on, custom logic is needed on the getter or setter of the field, the public keyword can be omitted and a custom getter and setter generated instead.
 
 ### Constructor definitions
 
@@ -503,29 +454,150 @@ Sequence(
 )
 ```
 
+If a class has no constructor, an empty no-argument constructor will be provided by default.
+
+Upon constructor, all fields must be initialized, and it is a compile-time error for a constructor to complete without initializing every field. Additionally, it is illegal for a constructor to set a final (`val`) field twice. Fields initialization follows the rules below:
+
+- `val` fields with an initializer are already initialized upon object construction. Constructors cannot change their value.
+- `var` fields with an initializer are already initialized upon object constructor, but may still be updated by the constructor. (or any other method)
+- `val` fields without initializer **must** be initialized exactly once by the constructor.
+- `var` fields without initializer, but with a type that has a defined default value, initialization is optional. If the field is not initialized, the default value will be stored.
+- `var` fields without initializer and without default value **must** be initializer by the constructor.
+
+Additionally, constructors must not call methods on an object that is not fully initialized. They are also not allow to pass `this` to any method - no code must ever be able observe an object that is not fully initialized:
+
+```
+class Point {
+	val x: double;
+	val y: double;
+	
+	this(x: double, y: double) {
+		this.x = x;
+		println("Length: " + length()); // error: attempting to call a method on an incomplete object
+		this.y = y;
+		// from here on, all fields are initialized, and this is a valid object to use
+	}
+	
+	length() {
+		return Math.sqrt(x * x + y * y);
+	}
+}
+```
+
+A derived class is required to call one of the superclass constructors before initializing any fields or using `this`. It does so using the `super` keyword. If no superclass constructor is called explicitly, the empty superclass constructor will be called. If there is no empty superclass constructor, a compile-time error is generated.
+
 ### Method definitions
 
-### Getter definitions
+Classes and interfaces may define methods. Methods are defined using their name and a method header, which may consist of zero or more parameter definitions and a return type:
 
-### Setter definitions
+```
+class Point {
+	...
+	
+	translate(x: double, y: double): Point {
+		...
+	}
+}
+```
 
-### Implementation definitions
+If the return type can be deduced from the method body, the return type can be omitted:
+
+```
+class Point {
+	...
+	
+	translate(x: double, y: double) {
+		return new Point(this.x + x, this.y + y);
+	}
+	
+	scale(scale: double) => new Point(x * scale, y * scale);
+}
+```
+
+Classes can define virtual methods, which can overridden:
+
+```
+class Animal {
+	virtual shout() {
+		println("?");
+	}
+}
+
+class Dog {
+	override shout() {
+		println("Woof!");
+	}
+}
+```
+
+Methods not explicitly defined virtual cannot be overridden. Virtual methods should be used sparingly - instead, if you can, use interfaces instead, in which case all methods are virtual unless they are explicitly declared final.
+
+If a method overrides or implements an existing method, the argument types can be omitted, since they can be inferred from the parent class or interface:
+
+```
+interface Shape {
+	translate(x: double, y: double);
+}
+
+class Circle {
+	val x: double;
+	val y: double;
+	val radius: double;
+	
+	this(x: double, y: double, radius: double) {
+		this.x = x;
+		this.y = y;
+		this.radius = radius;
+	}
+	
+	implements Shape {
+		// argument types can be omitted
+		translate(x, y) => new Circle(this.x + x, this.y + y, radius);
+	}
+}
+```
+
+### Getters and setters
+
+### Interface implementations
 
 ### Caller definitions
 
-### Indexer definitions
+### Indexers
 
 ### Caster definitions
 
-### Operator definitions
+### Operator overloading
 
 ### Iterator definitions
 
 ### Inner types
 
+## Method and function bodies
+
+Methods and functions can be written in one of the following forms:
+
+```Railroad
+Choice(1,
+	BlockStatement,
+	Sequence('=>', NonTerminal('Expression'), ';'),
+	';'
+)
+```
+
+The standard method body is a block statement, which starts with `{` and ends with `}` and may contain any number of statements.
+
+If the return value of a method is a simple expression, a simplified method body can be used instead using the lambda syntax:
+
+```
+function length(x: number, y: number) => Math.sqrt(x * x + y * y);
+```
+
+Some methods, such as interface method definitions or abstract methods, have no method body at all. In this case a semicolon is used instead.
+
 ## Statements
 
-
+Statements from the
 
 ```Railroad
 Sequence(

@@ -232,7 +232,7 @@ This function can come in handy in builder methods, such as the one illustrated 
 
 ## take and swap
 
-Two new built-in methods are available, which are particularly useful on unique values: `swap` will, as expected, swap out two values; whereas `take` will replace a value with its default. Using `take` on a variable or field which has no default value is an error.
+Two new built-in methods are available, which are particularly useful on unique values: `swap` will, as expected, swap out two values; whereas `take` will replace a value with its default or a given value (when using the 2-argument variant). Using the 1-argument variant of `take` on a variable or field which has no default value is an error.
 
 ```
 class MyBuilder {
@@ -245,8 +245,10 @@ class MyBuilder {
 	
 	unique build() {
 		var x = "";
-		swap(x, this.y); // can't use take on x, since string has no default value
+		swap(x, this.y);
 		return new MyClass(x, take(y)); // can use take on y, which will replace it with null
+		// equivalent code:
+		// return new MyClass(take(x, ""), take(y));
 	}
 }
 
