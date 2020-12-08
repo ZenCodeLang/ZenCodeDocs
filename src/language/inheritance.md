@@ -7,6 +7,8 @@ In ZenCode, inheritance should be used sparingly. If your intended functionality
 - The superclass and its subclasses are written by the same team.
 - The subclasses are quite similar, but their differences in implementation cannot be (easily) implemented using interfaces.
 
+## Virtual classes
+
 ZenCode is written with this principle in mind - it assumes you *won't* be using inheritance. By default, classes cannot extend other classes unless marked `virtual`:
 
 ```
@@ -25,6 +27,8 @@ class B : A { // OK
 class C : B { // error: B is not virtual
 }
 ```
+
+## Virtual methods
 
 Likewise, methods cannot be overridden unless they are also marked `virtual`, and the overriding method must be marked as such with `override`:
 
@@ -58,6 +62,8 @@ class Bar : Foo {
 }
 ```
 
+## Subclass constructors
+
 Every subclass constructor is required to call a superclass constructor, unless a no-argument superclass constructor exists:
 
 ```
@@ -87,3 +93,39 @@ class Bar3 : Foo {
 }
 ```
 
+## Abstract classes and methods
+
+Classes can also be declared `abstract`, meaning that they cannot be instantiated, they *must* be extended.
+
+```
+abstract class Foo {
+	virtual act() {
+		print("Hello");
+	}
+}
+
+class Bar : Foo {
+	override act() {
+		print("Yo");
+	}
+}
+
+val a = new Foo(); // error: cannot instantiate an abstract class
+val b = new Bar(); // OK
+```
+
+`abstract` implies `virtual`, and so it is not necessary to declare classes as being both.
+
+Methods can be declared `abstract` as well. Abstract methods have no implementation - they must be implemented by a subclass. If a class has abstract methods, the class *must* be explicitly declared abstract as well.
+
+```
+abstract class Bar {
+	abstract act(): void;
+}
+
+class Foo : Bar {
+	override act() {
+		print("Yo");
+	}
+}
+```
