@@ -4,6 +4,9 @@
 
 Enums can be declared as typed enums, eg:
 
+[//]: # (Make example of enums with multiple parameters in the constructor)
+[//]: # (I just saw the last line in this file so gotta research that properly. TODO BOTHER STAN)
+
 ```
 enum UserRole: int {
     User, // automatically assigned the value 0

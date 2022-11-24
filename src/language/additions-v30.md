@@ -1,5 +1,9 @@
 # ZenCode 3.0 Extensions
 
+[//]: # (TODO WIT: Difference between Tuple and Class? Immutability and Extensibility I presume?)
+
+[//]: # (Also, has this changed?)
+
 ## Structs
 
 It is now possible to define structs, which are passed by value:
