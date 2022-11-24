@@ -129,3 +129,5 @@ class Foo : Bar {
 	}
 }
 ```
+
+A non-abstract subclass is required to implement every abstract method on its superclass. If a subclass is abstract, it is not required to do so; but any unimplemented abstract superclass methods will be inherited as well, and will still need to be implemented by any non-abstract subclass.

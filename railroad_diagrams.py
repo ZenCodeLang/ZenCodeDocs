@@ -774,9 +774,9 @@ class End(DiagramItem):
 class Terminal(DiagramItem):
     def __init__(self, text, href=None):
         DiagramItem.__init__(self, 'g', {'class': 'terminal'})
-        self.text = text
+        self.text = text or ''
         self.href = href
-        self.width = len(text) * CHARACTER_ADVANCE + 20
+        self.width = len(self.text) * CHARACTER_ADVANCE + 20
         self.up = 11
         self.down = 11
         self.needsSpace = True
