@@ -142,7 +142,6 @@ class
 const
 continue
 default
-destructable
 do
 double
 else
@@ -151,7 +150,6 @@ expand
 extern
 export
 false
-final
 finally
 float
 for
@@ -159,7 +157,6 @@ function
 get
 if
 in
-immutable
 implements
 implicit
 import
@@ -182,7 +179,6 @@ public
 return
 sbyte
 set
-shared
 short
 static
 string
@@ -190,14 +186,12 @@ struct
 super
 switch
 this
-threadlocked
 throw
 throws
 true
 try
 uint
 ulong
-unique
 ushort
 usize
 val
