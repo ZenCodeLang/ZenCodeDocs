@@ -8,8 +8,6 @@ ZenCode is a programming language and software which can be used to provide an a
 
 The name "ZenCode" denotes both the language as well as the runtime systems.
 
-
-
 What is it?
 
 - A safe system, fully controlled by its host environment. The host application has fine control over which functions the scripts may perform.
