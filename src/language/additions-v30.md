@@ -77,6 +77,8 @@ Sequence(
 
 Borrows can be declared mutable, which makes the val fields modifyable:
 
+[//]: # (TODO Remove this as it will not work on classes, only structs)
+
 ```
 class MyObject {
 	val _name: string;
