@@ -2,6 +2,8 @@
 
 ## Destructable values
 
+[//]: # (TODO WIT: Understand how much of this is updated, exists, and is functional / outdated)
+
 Classes can now also have a destructor, which is defined as follows:
 
 ```

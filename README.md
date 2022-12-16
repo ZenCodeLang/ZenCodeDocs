@@ -23,8 +23,23 @@ source .venv\Bin\activate
 pip -r requirements.txt
 ```
 
+`commonmark` is required to compile the documentation. If you're missing it, run:
+
+`pip install commonmark`
+
 You can then run and compile as follows:
 
 ```commandline
 python compile.py
 ```
+
+And to see your changes:
+
+```commandline
+cd html
+python -m http.server
+```
+
+
+
+

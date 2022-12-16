@@ -128,6 +128,8 @@ For instance, the following wysiwyg strings are valid examples:
 
 Certain identifiers are reserved as keywords. The following keywords are specified:
 
+[//]: # (TODO Remove lock eventually)
+
 ```
 abstract
 alias
@@ -142,7 +144,6 @@ class
 const
 continue
 default
-destructable
 do
 double
 else
@@ -151,7 +152,6 @@ expand
 extern
 export
 false
-final
 finally
 float
 for
@@ -159,7 +159,6 @@ function
 get
 if
 in
-immutable
 implements
 implicit
 import
@@ -182,7 +181,6 @@ public
 return
 sbyte
 set
-shared
 short
 static
 string
@@ -190,14 +188,12 @@ struct
 super
 switch
 this
-threadlocked
 throw
 throws
 true
 try
 uint
 ulong
-unique
 ushort
 usize
 val
@@ -897,28 +893,8 @@ for a in [1, 2, 3] {
 
 ### Ternary operator
 
-### Combinatorial expressions (&& and ||)
-
-Combinatorial expressions can be used to either:
-
-- Evaluate the right-hand side of an expression if and only if the left-hand side resolves to true or non-null (&&)
-- Evaluate the right-hand side of an expression if and only if the left-hand side resolves to false or null (||)
-
-These expressions can be used to combine two conditions, to guard the right-hand side against a certain condition, or as a performance improvement preventing a possible costly expression to be resolved. It can also be used for null handling logic:
-
-```
-val x = 5;
-if x >= 0 && x < 10 // combine two conditions
-	println("x is within range");
-if x < 0 || x >= 10
-	println("x is out of range");
-
-function foo(dictionary: int[string]) {
-	val a = dictionary.get('something'); // type of a is int?
-	val b = dictionary.get('something') || 0; // use 0 as default value here
-	val c = a && a + 1; // guard against a being null; if a is null, this expression resolves to null
-}
-```
+[//]: # (TODO Document Coalescence with the test case: https://discord.com/channels/415994300527280159/415994301043048459/1053402061556957194)
+[//]: # (See if refactor can compile that)
 
 ### Logical and, or and xor
 

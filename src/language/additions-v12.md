@@ -2,6 +2,8 @@
 
 ## Tuples and destructuring
 
+[//]: # (WIT: How functional are tuples, what's their utility)
+
 Tuples are immutable mini-structs and can be used as follows:
 
 ```
