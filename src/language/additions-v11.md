@@ -5,7 +5,7 @@
 Enums can be declared as typed enums, eg:
 
 [//]: # (Make example of enums with multiple parameters in the constructor)
-[//]: # (I just saw the last line in this file so gotta research that properly. TODO BOTHER STAN)
+[//]: # (The Last line means that `println(Color.Red)` -> 'red')
 
 ```
 enum UserRole: int {
